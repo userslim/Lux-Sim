@@ -15,14 +15,29 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS for the PayPal Button and Headers
 st.markdown("""
 <style>
     .main-header { font-size: 2.5rem; color: #1E88E5; text-align: center; margin-bottom: 1rem; }
     .sub-header { font-size: 1.5rem; color: #424242; margin-bottom: 1rem; }
     .success-box { background-color: #d4edda; padding: 1rem; border-radius: 0.5rem; border-left: 0.5rem solid #28a745; }
-    .outdoor-box { background-color: #e8f5e8; padding: 1rem; border-radius: 0.5rem; border-left: 0.5rem solid #2e7d32; }
-    .indoor-box { background-color: #e3f2fd; padding: 1rem; border-radius: 0.5rem; border-left: 0.5rem solid #1565c0; }
+    
+    /* PayPal Button Styling */
+    .paypal-button {
+        display: inline-block;
+        background-color: #FFC439;
+        color: #003087;
+        padding: 10px 20px;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+        text-align: center;
+        width: 100%;
+    }
+    .paypal-button:hover {
+        background-color: #f2ba36;
+        color: #003087;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -62,7 +77,6 @@ OUTDOOR_LIGHTS = {
 }
 
 # --- LOGIC FUNCTIONS ---
-
 def calculate_energy_cost(total_wattage, hours, days, rate):
     kwh_year = (total_wattage / 1000) * hours * days
     return {'yearly_cost': round(kwh_year * rate, 2), 'daily_cost': round((total_wattage/1000)*hours*rate, 2)}
@@ -85,7 +99,6 @@ def calculate_outdoor_lights(L, W, req_lux, area_type, mf=0.7):
     results = []
     for cat, lights in OUTDOOR_LIGHTS.items():
         for light in lights:
-            # Prevent Division by Zero
             cov_rad = max(0.1, light['mounting_height'] * math.tan(math.radians(light['beam_angle']/4)))
             cov_area = math.pi * (cov_rad**2)
             num = max(math.ceil(area / cov_area), math.ceil(total_lumens / light['lumens']))
@@ -94,11 +107,11 @@ def calculate_outdoor_lights(L, W, req_lux, area_type, mf=0.7):
     return sorted(results, key=lambda x: x['total_wattage']), area
 
 # --- MAIN APP ---
-
 def main():
     st.markdown("<h1 class='main-header'>💡 LuxSim Pro</h1>", unsafe_allow_html=True)
     
     with st.sidebar:
+        st.markdown("### ⚙️ Settings")
         env = st.radio("Environment", ["Indoor", "Outdoor"])
         L = st.number_input("Length (m)", 1.0, 200.0, 10.0)
         W = st.number_input("Width (m)", 1.0, 200.0, 8.0)
@@ -115,6 +128,16 @@ def main():
 
         cost_rate = st.number_input("SGD/kWh", 0.1, 1.0, 0.25)
         run_calc = st.button("Calculate", type="primary", use_container_width=True)
+        
+        st.write("---")
+        # --- PAYPAL SECTION ---
+        st.markdown("### ☕ Support this Project")
+        st.markdown("""
+            <a href="https://www.paypal.com/paypalme/YOUR_USERNAME" class="paypal-button" target="_blank">
+                Donate via PayPal
+            </a>
+        """, unsafe_allow_html=True)
+        st.caption("Help keep the servers running!")
 
     if run_calc:
         if env == "Indoor":
@@ -126,20 +149,17 @@ def main():
             best = results[0]
             costs = calculate_energy_cost(best['total_wattage'], 10, 365, cost_rate)
 
-            # Metrics
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Area", f"{area} m²")
             c2.metric("Target Lux", f"{lux}")
             c3.metric("Fixtures", f"{best['num_lights']}")
             c4.metric("Est. Annual Cost", f"S${costs['yearly_cost']}")
 
-            # Data Sanitization for Table (Prevents OverflowError)
             df = pd.DataFrame(results).replace([np.inf, -np.inf], 0).fillna(0)
             st.markdown("### 📊 All Options")
             st.dataframe(df, use_container_width=True, hide_index=True)
 
-            # Visual Placeholder
-            st.info("💡 Pro-tip: Spacing for these fixtures should be approximately " + str(best['spacing']) + "m apart.")
+            st.info(f"💡 Pro-tip: Spacing for these fixtures should be approximately {best['spacing']}m apart.")
 
 if __name__ == "__main__":
     main()
