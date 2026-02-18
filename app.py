@@ -133,7 +133,7 @@ def main():
         # --- PAYPAL SECTION ---
         st.markdown("### ☕ Support this Project")
         st.markdown("""
-            <a href="https://www.paypal.com/paypalme/YOUR_USERNAME" class="paypal-button" target="_blank">
+            <a href="https://www.paypal.com/ncp/payment/RUPD9EAL4MPFA" class="paypal-button" target="_blank">
                 Donate via PayPal
             </a>
         """, unsafe_allow_html=True)
@@ -163,3 +163,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
